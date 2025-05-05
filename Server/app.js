@@ -1,41 +1,62 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+// Load environment variables from .env file
+require("dotenv").config();
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+// Core dependencies
+const express = require("express");
+const cors = require("cors");
+const passport = require("passport");
+const cookieSession = require("cookie-session");
+const logger = require("morgan");
+const passportSetup = require("./passport");
+// Route handlers
+const UserRouter = require("./routes/userRoutes");
 
-var app = express();
+const app = express();
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
+// Middleware for logging HTTP requests (dev-friendly format)
+app.use(logger("dev"));
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+// Configure session using cookie-session
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1"], // You can store this in .env for better security
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  })
+);
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+// Initialize passport for authentication
+app.use(passport.initialize());
+app.use(passport.session());
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+// Enable CORS to allow requests from the frontend
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Your frontend origin
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true, // Allow sending cookies across domains
+  })
+);
+
+// User-related API routes
+app.use("/users", UserRouter);
+
+// Catch 404 and forward to error handler
+app.use((req, res, next) => {
+  res.status(404).json({ error: "Not found" });
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// General error handler
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({
+    error: err.message || "Internal Server Error",
+  });
+});
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+// Start server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`🚀 Server running on http://localhost:${port}`);
 });
 
 module.exports = app;
