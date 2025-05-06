@@ -1,27 +1,28 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
-// Configure Google OAuth strategy
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID, // From your .env file
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET, // From your .env file
-      callbackURL: "/auth/google/callback", // Redirect URL after authentication
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "/auth/google/callback",
     },
-    function (accessToken, refreshToken, profile, callback) {
-      // In a real app, you'd store the user info in a database here
-      return callback(null, profile); // Send user profile to the session
+    (accessToken, refreshToken, profile, done) => {
+      // Here you would typically find or create the user in DB
+      return done(null, profile);
     }
   )
 );
 
-// Serialize the user to the session
+// Save user to session
 passport.serializeUser((user, done) => {
   done(null, user);
 });
 
-// Deserialize the user from the session
+// Retrieve user from session
 passport.deserializeUser((user, done) => {
   done(null, user);
 });
+
+module.exports = passport;
